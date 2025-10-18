@@ -70,4 +70,38 @@ class User extends Authenticatable
     {
         return $this->hasMany(JadwalPeriksa::class, 'id_dokter');
     }
+
+    /**
+     * Accessor for legacy 'nama' attribute used in views.
+     * Allows $user->nama to return the 'name' column.
+     */
+    public function getNamaAttribute()
+    {
+        return $this->attributes['name'] ?? null;
+    }
+
+    /**
+     * Mutator so assigning to $user->nama sets the 'name' column.
+     */
+    public function setNamaAttribute($value)
+    {
+        $this->attributes['name'] = $value;
+    }
+
+    /**
+     * Ensure a 'name' exists before creating the model.
+     * Fallbacks: use 'nama' (if provided) or extract from email local-part.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->name)) {
+                if (!empty($user->attributes['nama'])) {
+                    $user->name = $user->attributes['nama'];
+                } elseif (!empty($user->email)) {
+                    $user->name = strstr($user->email, '@', true) ?: $user->email;
+                }
+            }
+        });
+    }
 }
